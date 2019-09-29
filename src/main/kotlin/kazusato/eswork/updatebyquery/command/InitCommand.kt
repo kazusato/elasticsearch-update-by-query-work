@@ -9,6 +9,9 @@ import org.elasticsearch.client.RequestOptions
 import org.elasticsearch.client.indices.CreateIndexRequest
 import org.elasticsearch.client.indices.GetIndexRequest
 import org.elasticsearch.common.settings.Settings
+import java.time.Duration
+import java.time.LocalDateTime
+import kotlin.math.floor
 
 class InitCommand : AbstractCommand<UpdateByQueryContext> {
 
@@ -117,11 +120,57 @@ class InitCommand : AbstractCommand<UpdateByQueryContext> {
 
         val resp = context.clientManager.client.bulk(bulkReq, RequestOptions.DEFAULT)
         println("[CREATE DOCUMENT] Response: hasFailures => ${resp.hasFailures()}")
-
     }
 
     private fun generateDocumentsWithCount(count: Long) {
-        throw UnsupportedOperationException("Not implemented yet.")
+        val startTime = LocalDateTime.now()
+        val digit = floor(Math.log10(count.toDouble())).toInt() + 1
+        val storeFormat = "書店%0${digit}d"
+
+        val indexRequestList = mutableListOf<IndexRequest>()
+        for (i in 1..count) {
+            val storeName = storeFormat.format(i)
+            val area = if (i % 2L == 1L) {
+                "Tokyo"
+            } else {
+                "Osaka"
+            }
+
+            val indexRequest = IndexRequest("storeinfo").source(
+                    mapOf(
+                            "name" to storeName,
+                            "category" to "bookstore",
+                            "area" to area
+                    )
+            )
+            indexRequestList.add(indexRequest)
+
+            if (i % 100_000L == 0L) {
+                processBulkRequest(indexRequestList, i)
+                indexRequestList.clear()
+            }
+        }
+        if (!indexRequestList.isEmpty()) {
+            processBulkRequest(indexRequestList, count)
+            indexRequestList.clear()
+        }
+
+        val endTime = LocalDateTime.now()
+        println("[CREATE DOCUMENT] END: duration => ${Duration.between(startTime, endTime)}")
+    }
+
+    private fun processBulkRequest(indexRequestList: List<IndexRequest>, cumulativeCount: Long) {
+        val startTime = LocalDateTime.now()
+        val bulkReq = BulkRequest()
+
+        indexRequestList.forEach { req ->
+            bulkReq.add(req)
+        }
+
+        val resp = context.clientManager.client.bulk(bulkReq, RequestOptions.DEFAULT)
+        val endTime = LocalDateTime.now()
+        println("[CREATE DOCUMENT] Bulk[$cumulativeCount] Response: hasFailures => ${resp.hasFailures()}, duration => ${Duration.between(startTime, endTime)}")
+
     }
 
     private fun checkIfIndexExists(): Boolean {
@@ -153,7 +202,8 @@ class InitCommand : AbstractCommand<UpdateByQueryContext> {
                         "details" to mapOf(
                                 "type" to "nested",
                                 "properties" to mapOf(
-                                        "store_type" to mapOf("type" to "keyword")
+                                        "store_type" to mapOf("type" to "keyword"),
+                                        "area" to mapOf("type" to "keyword")
                                 )
                         )
                 ),

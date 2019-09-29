@@ -1,10 +1,7 @@
 package kazusato.eswork.updatebyquery
 
 import kazusato.eswork.updatebyquery.base.AbstractCommand
-import kazusato.eswork.updatebyquery.command.HealthCommand
-import kazusato.eswork.updatebyquery.command.InitCommand
-import kazusato.eswork.updatebyquery.command.NoopCommand
-import kazusato.eswork.updatebyquery.command.UpdateByQueryCommand
+import kazusato.eswork.updatebyquery.command.*
 import kazusato.eswork.updatebyquery.elasticsearch.ClientManager
 
 fun main(args: Array<String>) {
@@ -54,8 +51,9 @@ class UpdateByQueryWork : AutoCloseable {
         when (command) {
             "noop" -> return NoopCommand(commandArgs, context)
             "init" -> return InitCommand(commandArgs, context)
-            "updatebyquery" -> return UpdateByQueryCommand(commandArgs, context) 
+            "updatebyquery" -> return UpdateByQueryCommand(commandArgs, context)
             "health" -> return HealthCommand(commandArgs, context)
+            "clear" -> return ClearCommand(commandArgs, context)
             else -> throw IllegalArgumentException("No such command: $command")
         }
     }
