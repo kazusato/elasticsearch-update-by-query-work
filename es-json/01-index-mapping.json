@@ -1,0 +1,23 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0
+  },
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "name": {"type": "keyword"},
+      "category": {"type": "keyword"},
+      "area": {"type": "keyword"},
+      "store_type": {"type": "keyword"},
+      "data_schema": {"type": "keyword"},
+      "tags": {"type": "keyword"},
+      "details": {
+        "type": "nested",
+        "properties": {
+          "store_type": {"type": "keyword"}
+        }
+      }
+    }
+  }
+}
